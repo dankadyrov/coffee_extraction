@@ -188,7 +188,7 @@ class Simulation:
             particle.pressure = self.pressure_coefficient * (particle.density - self.rest_density)
 
     def normal(self, distance: float, mass: float, position: np.ndarray) -> np.ndarray:
-        h = 1
+        h = 0.5
         q = distance / h
         h_squared = h ** 2
         h_9 = h ** 9
@@ -199,14 +199,14 @@ class Simulation:
             return np.zeros(2)
 
     def surface_coef(self, distance: float, mass: float, normal: np.ndarray) -> float:
-        h = 0.25
+        h = 0.5
         q = distance / h
         h_squared = h ** 2
         h_9 = h ** 9
         sigma = mass * 315 / (64 * np.pi * h_9)
         d_squared = distance * distance
-        if q <= 1:
-            module = np.linalg.norm(normal)
+        module = np.linalg.norm(normal)
+        if q <= 1 and module > 0.0001:
             k = -1 * sigma / module * (3 * (h_squared - d_squared) ** 2 * 2 + 3 * (h_squared - d_squared) ** 2 * 2 * d_squared)
             return k
         else:
@@ -245,7 +245,7 @@ class Simulation:
         y_water = [p.position[1] for p in self.particles if p.type == 'water']
         plt.figure(figsize=(12, 12))
         plt.scatter(x_coffee, y_coffee, color='brown', label='Coffee', alpha=1, s=12)
-        plt.scatter(x_water, y_water, color='blue', label='Water', alpha=0.5, s=2.5)
+        plt.scatter(x_water, y_water, color='blue', label='Water', alpha=1, s=2.5)
         plt.title(f"Current time: {current_time:.2f}")
         plt.xlabel("X")
         plt.ylabel("Y")
@@ -260,9 +260,9 @@ class Simulation:
 
 def main():
     h = 0.25 # Другой размер ядра, пока что оно лучше всего работает
-    pressure_coefficient = 10.0
+    pressure_coefficient = 20.0
     viscosity_coefficient = 10.0
-    coffee_water_viscosity = 500.0
+    coffee_water_viscosity = 50.0
     gravity = 1000.0
     rest_density = 1.0
 
@@ -298,10 +298,10 @@ def main():
         return np.array([kernel_der_x, kernel_der_y])
 
     # Генерируем точки воды в прямоугольнике с равным шагом
-    x_min, x_max = -10, 10
+    x_min, x_max = -7.5, 5
     y_min, y_max = 5, 15
 
-    step = 0.75
+    step = 0.5
     num_points_x = int((x_max - x_min) / step) + 1
     num_points_y = int((y_max - y_min) / step) + 1
     water_particles = []
