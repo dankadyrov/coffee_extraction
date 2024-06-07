@@ -187,6 +187,31 @@ class Simulation:
         for particle in self.particles:  # заменила частицы кофе на все частицы
             particle.pressure = self.pressure_coefficient * (particle.density - self.rest_density)
 
+    def normal(self, distance: float, mass: float, position: np.ndarray) -> np.ndarray:
+        h = 1
+        q = distance / h
+        h_squared = h ** 2
+        h_9 = h ** 9
+        sigma = mass * 315 / (64 * np.pi * h_9)
+        if q <= 1:
+            return sigma * 3 * (h_squared - distance * distance) ** 2 * 2 * position
+        else:
+            return np.zeros(2)
+
+    def surface_coef(self, distance: float, mass: float, normal: np.ndarray) -> float:
+        h = 0.25
+        q = distance / h
+        h_squared = h ** 2
+        h_9 = h ** 9
+        sigma = mass * 315 / (64 * np.pi * h_9)
+        d_squared = distance * distance
+        if q <= 1:
+            module = np.linalg.norm(normal)
+            k = -1 * sigma / module * (3 * (h_squared - d_squared) ** 2 * 2 + 3 * (h_squared - d_squared) ** 2 * 2 * d_squared)
+            return k
+        else:
+            return 0
+
     def compute_forces(self) -> List[np.ndarray]:
         forces = []
         for particle in self.particles:
@@ -203,7 +228,10 @@ class Simulation:
                         viscosity_force = viscosity * neighbor.mass * (
                                 neighbor.velocity - particle.velocity) / neighbor.density * self.kernel(
                             distance)  # поменяла формулу для силы
-                        force += pressure_force + viscosity_force
+                        normal = self.normal(distance, particle.mass, particle.position)
+                        k = self.surface_coef(distance, particle.mass, normal)
+                        tension_force = -0.05 * k * normal
+                        force += pressure_force + viscosity_force + tension_force
                 force[1] -= self.gravity * self.timestep
             forces.append(force)
         return forces
@@ -222,8 +250,8 @@ class Simulation:
         plt.xlabel("X")
         plt.ylabel("Y")
         plt.legend()
-        plt.xlim(-40, 40)
-        plt.ylim(-40, 40)
+        plt.xlim(-20, 20)
+        plt.ylim(-20, 20)
         plt.grid(False)
         plt.show(block=False)
         plt.pause(0.1)
@@ -287,7 +315,7 @@ def main():
     print(len(water_particles))
 
     # grain = CoffeeGrain(coffee_particles)
-    particles = coffee_visualizer(0.1)
+    particles = coffee_visualizer(1.25)
     particles = list(np.append(particles, water_particles))  # создала один массив со всеми частицами
 
     sim = Simulation(particles, timestep=0.01, total_time=10, Dw=1e-9, kernel=kernel,
