@@ -133,8 +133,6 @@ class Simulation:
     def apply_forces_and_update(self, forces: List[np.ndarray]) -> None:
         for particle, force in zip(self.particles, forces):
             particle.update(self.timestep, force)
-        '''self.grain.apply_forces(forces, self.timestep)
-        self.grain.update_particles(self.timestep)'''
 
     # сложность всё равно n^2, так что можно и без этого делать (с соседями даже медленнее на константу)
     def find_neighbours(self, particle: SPHParticle, radius: float = 5) -> List[
@@ -224,14 +222,13 @@ class Simulation:
         return forces
 
     def visualize(self, current_time: float, camera: Camera) -> None:  # стоит добавить параметр camera, чтобы делать гиф
-        plt.close()  # выключить при отрисовке гифок
         x_coffee = [p.position[0] for p in self.particles if p.type == 'coffee']
         y_coffee = [p.position[1] for p in self.particles if p.type == 'coffee']
         c_w_coffee = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'coffee']  # массив плотностей для цветовой гаммы
         x_water = [p.position[0] for p in self.particles if p.type == 'water']
         y_water = [p.position[1] for p in self.particles if p.type == 'water']
         c_w_water = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'water']  # массив плотностей для цветовой гаммы
-        plt.figure(figsize=(12, 12))  # убрать при отрисовке гифок
+        # plt.figure(figsize=(12, 12))  # убрать при отрисовке гифок
         plt.scatter(x_coffee, y_coffee, c=c_w_coffee, label='Coffee', alpha=1, s=12, cmap='tab20b')  # отрисовка по цветам в зависимости от плотности веществ, cmap - цветовая карта
         plt.scatter(x_water, y_water, c=c_w_water, label='Water', alpha=1, s=2.5, cmap='cool')
         plt.title(f"Current time: {current_time:.2f}")
@@ -242,10 +239,7 @@ class Simulation:
         plt.xlim(-20, 20)
         plt.ylim(-20, 20)
         plt.grid(False)
-        plt.show(block=False)
-        plt.pause(0.1)
         camera.snap() # добавить при отрисовке гифок
-
 
 def main():
     h = 0.25 # Другой размер ядра, пока что оно лучше всего работает
@@ -303,7 +297,6 @@ def main():
 
     print(len(water_particles))
 
-    # grain = CoffeeGrain(coffee_particles)
     particles = coffee_visualizer(1.25)
     particles = list(np.append(particles, water_particles))
 
