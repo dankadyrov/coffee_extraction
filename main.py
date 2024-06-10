@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from typing import Callable, List
-# from celluloid import Camera  # библиотека для гифок, можно убрать, если не пользуешься
+from celluloid import Camera  # библиотека для гифок, можно убрать, если не пользуешься
 
 
 # Тут конечно захардкодил, но пока пойдет
@@ -141,16 +141,16 @@ class Simulation:
         self.gravity = gravity
 
     def run(self) -> None:
-        '''plt.style.use('_mpl-gallery-nogrid')
+        plt.style.use('_mpl-gallery-nogrid')
         fig = plt.figure(figsize=(12, 12))
-        camera = Camera(fig)''' # функции, нужные для создания гифок
+        camera = Camera(fig)  # функции, нужные для создания гифок
         while self.current_time < self.total_time:
             self.update()
             if int(round(self.current_time, 2) * 250) % 10 == 0:  # чаще обновления экрана
-                self.visualize(self.current_time)  # при создании гифок добавить параметр camera
+                self.visualize(self.current_time, camera)  # при создании гифок добавить параметр camera
             self.current_time += self.timestep
-        '''animation = camera.animate()
-        animation.save('plot_1.gif', writer='imagemagick')''' # функции для создания гифок
+        animation = camera.animate()
+        animation.save('plot_3.gif', writer='imagemagick')  # функции для создания гифок
 
     def update(self) -> None:
         self.compute_densities()
@@ -253,32 +253,32 @@ class Simulation:
             forces.append(force)
         return forces
 
-    def visualize(self, current_time: float) -> None:  # стоит добавить параметр camera, чтобы делать гиф
-        plt.close()  # выключить при отрисовке гифок
+    def visualize(self, current_time: float, camera) -> None:  # стоит добавить параметр camera, чтобы делать гиф
+        # plt.close()  # выключить при отрисовке гифок
         x_coffee = [p.position[0] for p in self.particles if p.type == 'coffee']
         y_coffee = [p.position[1] for p in self.particles if p.type == 'coffee']
         c_w_coffee = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'coffee']  # массив плотностей для цветовой гаммы
         x_water = [p.position[0] for p in self.particles if p.type == 'water']
         y_water = [p.position[1] for p in self.particles if p.type == 'water']
         c_w_water = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'water']  # массив плотностей для цветовой гаммы
-        plt.figure(figsize=(12, 12))  # убрать при отрисовке гифок
+        # plt.figure(figsize=(12, 12))  # убрать при отрисовке гифок
         plt.scatter(x_coffee, y_coffee, c=c_w_coffee, label='Coffee', alpha=1, s=12, cmap='tab20b')  # отрисовка по цветам в зависимости от плотности веществ, cmap - цветовая карта
         plt.scatter(x_water, y_water, c=c_w_water, label='Water', alpha=1, s=2.5, cmap='cool')
         plt.title(f"Current time: {current_time:.2f}")
         plt.xlabel("X")
         plt.ylabel("Y")
-        plt.legend()
-        # plt.legend(['Coffee', 'Water']) # добавить при отрисовке гифок (стандартная легенда не работает как следует)
+        # plt.legend()
+        plt.legend(['Coffee', 'Water'])  # добавить при отрисовке гифок (стандартная легенда не работает как следует)
         plt.xlim(-20, 20)
         plt.ylim(-20, 20)
         plt.grid(False)
-        plt.show(block=False)
-        plt.pause(0.1)
-        # camera.snap() # добавить при отрисовке гифок
+        # plt.show(block=False)
+        # plt.pause(0.1)
+        camera.snap()  # добавить при отрисовке гифок
 
 
 def main():
-    h = 0.25 # Другой размер ядра, пока что оно лучше всего работает
+    h = 0.25  # Другой размер ядра, пока что оно лучше всего работает
     pressure_coefficient = 20.0
     viscosity_coefficient = 10.0
     coffee_water_viscosity = 50.0
@@ -337,7 +337,7 @@ def main():
     particles = coffee_visualizer(1.25)
     particles = list(np.append(particles, water_particles))
 
-    sim = Simulation(particles, timestep=0.01, total_time=5, Dw=0.00001, kernel=kernel,
+    sim = Simulation(particles, timestep=0.01, total_time=0.5, Dw=0.00001, kernel=kernel,
                      kernel_derivative=kernel_derivative, pressure_coefficient=pressure_coefficient,
                      viscosity_coefficient=viscosity_coefficient, coffee_water_viscosity=coffee_water_viscosity,
                      rest_density=rest_density, gravity=gravity)  # Dw - коэффициент диффузии, подобран из визуализации
