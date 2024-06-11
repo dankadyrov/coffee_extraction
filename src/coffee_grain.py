@@ -1,5 +1,6 @@
 from typing import List
 from sph_particle import SPHParticle
+import numpy as np
 
 
 class CoffeeGrain:
