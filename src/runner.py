@@ -13,8 +13,8 @@ def run():
     gravity = 1000.0
     rest_density = 1.0
 
-    x_min, x_max = -7.5, 5
-    y_min, y_max = 5, 15
+    x_min, x_max = -7.5, 7.5
+    y_min, y_max = 5, 20
 
     step = 0.5
     num_points_x = int((x_max - x_min) / step) + 1
