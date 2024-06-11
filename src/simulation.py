@@ -36,7 +36,7 @@ class Simulation:
                 self.current_time += self.timestep
                 pbar.update(self.timestep)
         animation = camera.animate()
-        animation.save('plot_1.gif', writer='pillow')
+        animation.save('../results/model.gif', writer='pillow')
 
     def update(self) -> None:
         self.compute_densities()

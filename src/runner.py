@@ -6,10 +6,10 @@ from kernels import kernel, kernel_derivative
 
 
 def run():
-    total_time = 4
+    total_time = 5
     pressure_coefficient = 20.0
     viscosity_coefficient = 20.0
-    coffee_water_viscosity = 50.0
+    coffee_water_viscosity = 75.0
     gravity = 1000.0
     rest_density = 1.0
 
@@ -28,7 +28,7 @@ def run():
 
     print(len(water_particles))
 
-    particles = coffee_visualizer(1.25, 5, 3)
+    particles = coffee_visualizer(1.5, 5, 3)
     particles = list(np.append(particles, water_particles))
 
     sim = Simulation(particles, timestep=0.02, total_time=total_time, Dw=0.00001, kernel=kernel,
