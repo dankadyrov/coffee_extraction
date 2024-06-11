@@ -3,6 +3,8 @@ from matplotlib import pyplot as plt
 from sph_particle import SPHParticle
 from celluloid import Camera
 import numpy as np
+from tqdm import tqdm
+
 
 class Simulation:
     def __init__(self, particles: List[SPHParticle], timestep: float, total_time: float,
@@ -20,16 +22,19 @@ class Simulation:
         self.coffee_water_viscosity = coffee_water_viscosity  # добавила коэффициент вязкости внутри кофе
         self.rest_density = rest_density
         self.gravity = gravity
+        self.df = {'time': [], 'mean_c_w': []}
 
     def run(self) -> None:
         plt.style.use('_mpl-gallery-nogrid')
         fig = plt.figure(figsize=(12, 12))
-        camera = Camera(fig) # функции, нужные для создания гифок
-        while self.current_time < self.total_time:
-            self.update()
-            if int(round(self.current_time, 2) * 250) % 10 == 0:
-                self.visualize(self.current_time, camera)
-            self.current_time += self.timestep
+        camera = Camera(fig)  # функции, нужные для создания гифок
+        with tqdm(total=self.total_time, desc="Progress") as pbar:
+            while self.current_time < self.total_time:
+                self.update()
+                if int(round(self.current_time, 2) * 250) % 10 == 0:
+                    self.visualize(self.current_time, camera)
+                self.current_time += self.timestep
+                pbar.update(self.timestep)
         animation = camera.animate()
         animation.save('plot_1.gif', writer='pillow')
 
@@ -39,6 +44,9 @@ class Simulation:
         self.compute_c_w(self.timestep)  # рассчёт диффузии
         forces = self.compute_forces()
         self.apply_forces_and_update(forces)
+        mean_c_w = self.calculate_mean_c_w()
+        self.df['time'].append(self.current_time)
+        self.df['mean_c_w'].append(mean_c_w)
 
     def apply_forces_and_update(self, forces: List[np.ndarray]) -> None:
         for particle, force in zip(self.particles, forces):
@@ -58,6 +66,7 @@ class Simulation:
     Рассчёты проводятся когда "поток" положительный (просто чтобы оно не считалось дважды)
     Диаметр и радиус действия подогнан (радиус действия чтобы на картинке выглядело реалистично)
     '''
+
     def compute_c_w(self, dt: float, diameter: float = 0.001):
         for particle in self.particles:
             neighbors = self.find_neighbours(particle, 1)
@@ -82,7 +91,7 @@ class Simulation:
             particle.pressure = self.pressure_coefficient * (particle.density - self.rest_density)
 
     def normal(self, distance: float, mass: float, position: np.ndarray) -> np.ndarray:
-        h = 0.75
+        h = 0.5
         q = distance / h
         h_squared = h ** 2
         h_9 = h ** 9
@@ -93,7 +102,7 @@ class Simulation:
             return np.zeros(2)
 
     def surface_coef(self, distance: float, mass: float, normal: np.ndarray) -> float:
-        h = 0.75
+        h = 0.5
         q = distance / h
         h_squared = h ** 2
         h_9 = h ** 9
@@ -101,7 +110,8 @@ class Simulation:
         d_squared = distance * distance
         module = np.linalg.norm(normal)
         if q <= 1 and module > 0.0001:
-            k = -1 * sigma / module * (3 * (h_squared - d_squared) ** 2 * 2 + 3 * (h_squared - d_squared) ** 2 * 2 * d_squared)
+            k = -1 * sigma / module * (
+                        3 * (h_squared - d_squared) ** 2 * 2 + 3 * (h_squared - d_squared) ** 2 * 2 * d_squared)
             return k
         else:
             return 0
@@ -130,22 +140,40 @@ class Simulation:
             forces.append(force)
         return forces
 
-    def visualize(self, current_time: float, camera: Camera) -> None:  # стоит добавить параметр camera, чтобы делать гиф
+    def visualize(self, current_time: float,
+                  camera: Camera) -> None:  # стоит добавить параметр camera, чтобы делать гиф
         x_coffee = [p.position[0] for p in self.particles if p.type == 'coffee']
         y_coffee = [p.position[1] for p in self.particles if p.type == 'coffee']
-        c_w_coffee = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'coffee']  # массив плотностей для цветовой гаммы
+        c_w_coffee = [round(p.c_w, 2) * 100 for p in self.particles if
+                      p.type == 'coffee']  # массив плотностей для цветовой гаммы
         x_water = [p.position[0] for p in self.particles if p.type == 'water']
         y_water = [p.position[1] for p in self.particles if p.type == 'water']
-        c_w_water = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'water']  # массив плотностей для цветовой гаммы
-        # plt.figure(figsize=(12, 12))  # убрать при отрисовке гифок
-        plt.scatter(x_coffee, y_coffee, c=c_w_coffee, label='Coffee', alpha=1, s=12, cmap='tab20b')  # отрисовка по цветам в зависимости от плотности веществ, cmap - цветовая карта
+        c_w_water = [round(p.c_w, 2) * 100 for p in self.particles if
+                     p.type == 'water']  # массив плотностей для цветовой гаммы
+        plt.scatter(x_coffee, y_coffee, c=c_w_coffee, label='Coffee', alpha=1, s=12,
+                    cmap='tab20b')  # отрисовка по цветам в зависимости от плотности веществ, cmap - цветовая карта
         plt.scatter(x_water, y_water, c=c_w_water, label='Water', alpha=1, s=2.5, cmap='cool')
         plt.title(f"Current time: {current_time:.2f}")
         plt.xlabel("X")
         plt.ylabel("Y")
         plt.legend()
-        plt.legend(['Coffee', 'Water']) # добавить при отрисовке гифок (стандартная легенда не работает как следует)
+        plt.legend(['Coffee', 'Water'])  # добавить при отрисовке гифок (стандартная легенда не работает как следует)
         plt.xlim(-20, 20)
         plt.ylim(-20, 20)
         plt.grid(False)
-        camera.snap() # добавить при отрисовке гифок
+        camera.snap()  # добавить при отрисовке гифок
+
+    def calculate_mean_c_w(self) -> float:
+        mean_c_w = np.array([round(p.c_w, 2) * 100 for p in self.particles if p.type == 'water']).mean()
+        return mean_c_w
+
+    def show_mean_concentration_per_time(self) -> None:
+        plt.close()
+        plt.figure(figsize=(12, 12))
+        plt.grid()
+        plt.scatter(self.df['time'], self.df['mean_c_w'], s=5)
+        plt.xlabel('Time')
+        plt.ylabel('Concentration, %')
+        plt.tight_layout()
+        plt.savefig('../results/concentration.png', dpi=100)
+        plt.show()

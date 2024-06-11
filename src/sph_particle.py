@@ -1,6 +1,6 @@
 import numpy as np
 class SPHParticle:
-    def __init__(self, position: np.ndarray[float, float], velocity: list[float, float], mass: float,
+    def __init__(self, position: np.ndarray, velocity: list[float], mass: float,
                  particle_type: str, c_w: float = 0.0):
         self.position = np.array(position)
         self.velocity = np.array(velocity)
