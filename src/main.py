@@ -27,7 +27,7 @@ def run():
 
     print(len(water_particles))
 
-    particles = coffee_visualizer(1.25)
+    particles = coffee_visualizer(1.25, 5, 1)
     particles = list(np.append(particles, water_particles))
 
     sim = Simulation(particles, timestep=0.01, total_time=3, Dw=0.00001, kernel=kernel,

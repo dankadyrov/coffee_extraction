@@ -27,11 +27,11 @@ class Simulation:
         camera = Camera(fig) # функции, нужные для создания гифок
         while self.current_time < self.total_time:
             self.update()
-            if int(round(self.current_time, 2) * 250) % 10 == 0:  # чаще обновления экрана
-                self.visualize(self.current_time, camera)  # при создании гифок добавить параметр camera
+            if int(round(self.current_time, 2) * 250) % 10 == 0:
+                self.visualize(self.current_time, camera)
             self.current_time += self.timestep
         animation = camera.animate()
-        animation.save('plot_1.gif', writer='imagemagick')# функции для создания гифок
+        animation.save('plot_1.gif', writer='pillow')
 
     def update(self) -> None:
         self.compute_densities()
@@ -44,7 +44,6 @@ class Simulation:
         for particle, force in zip(self.particles, forces):
             particle.update(self.timestep, force)
 
-    # сложность всё равно n^2, так что можно и без этого делать (с соседями даже медленнее на константу)
     def find_neighbours(self, particle: SPHParticle, radius: float = 5) -> List[
         SPHParticle]:  # поиск соседей для любых частиц
         neighbors = []
@@ -83,7 +82,7 @@ class Simulation:
             particle.pressure = self.pressure_coefficient * (particle.density - self.rest_density)
 
     def normal(self, distance: float, mass: float, position: np.ndarray) -> np.ndarray:
-        h = 0.5
+        h = 0.75
         q = distance / h
         h_squared = h ** 2
         h_9 = h ** 9
@@ -94,7 +93,7 @@ class Simulation:
             return np.zeros(2)
 
     def surface_coef(self, distance: float, mass: float, normal: np.ndarray) -> float:
-        h = 0.5
+        h = 0.75
         q = distance / h
         h_squared = h ** 2
         h_9 = h ** 9
