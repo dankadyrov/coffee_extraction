@@ -6,7 +6,7 @@ def coffee_step(mass: float, radius: float, x_c: float, y_c: float) -> List:
     step = 0.75
     x_min, x_max = -radius + x_c, radius + x_c
     y_min, y_max = -radius + y_c, radius + y_c
-    c_w = 1  # добавила концентрацию "веществ"
+    c_w = 1
     coffee_particles = []
 
     for i in range(11):

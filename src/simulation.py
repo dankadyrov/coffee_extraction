@@ -19,7 +19,7 @@ class Simulation:
         self.kernel_derivative = kernel_derivative
         self.pressure_coefficient = pressure_coefficient
         self.viscosity_coefficient = viscosity_coefficient
-        self.coffee_water_viscosity = coffee_water_viscosity  # добавила коэффициент вязкости внутри кофе
+        self.coffee_water_viscosity = coffee_water_viscosity
         self.rest_density = rest_density
         self.gravity = gravity
         self.df = {'time': [], 'mean_c_w': []}
@@ -27,7 +27,7 @@ class Simulation:
     def run(self) -> None:
         plt.style.use('_mpl-gallery-nogrid')
         fig = plt.figure(figsize=(12, 12))
-        camera = Camera(fig)  # функции, нужные для создания гифок
+        camera = Camera(fig)
         with tqdm(total=self.total_time, desc="Progress") as pbar:
             while self.current_time < self.total_time:
                 self.update()
@@ -41,7 +41,7 @@ class Simulation:
     def update(self) -> None:
         self.compute_densities()
         self.compute_pressure()
-        self.compute_c_w(self.timestep)  # рассчёт диффузии
+        self.compute_c_w(self.timestep)
         forces = self.compute_forces()
         self.apply_forces_and_update(forces)
         mean_c_w = self.calculate_mean_c_w()
@@ -52,8 +52,7 @@ class Simulation:
         for particle, force in zip(self.particles, forces):
             particle.update(self.timestep, force)
 
-    def find_neighbours(self, particle: SPHParticle, radius: float = 5) -> List[
-        SPHParticle]:  # поиск соседей для любых частиц
+    def find_neighbours(self, particle: SPHParticle, radius: float = 5) -> List[SPHParticle]:
         neighbors = []
         for other in self.particles:
             if np.linalg.norm(particle.position - other.position) < radius:
@@ -120,18 +119,17 @@ class Simulation:
         forces = []
         for particle in self.particles:
             force = np.array([0.0, 0.0])
-            if particle.type == 'water':  # делаем рассчёт сил только для частиц воды
+            if particle.type == 'water':
                 for neighbor in self.find_neighbours(particle):
                     distance = np.linalg.norm(particle.position - neighbor.position)
-                    x, y = particle.position[0] - neighbor.position[0], particle.position[1] - neighbor.position[
-                        1]  # координаты вектора между 2 молекулами, нужны для
+                    x, y = particle.position[0] - neighbor.position[0], particle.position[1] - neighbor.position[1]
                     if distance > 0:
                         pressure_force = -1.0 * self.kernel_derivative(x, y) * particle.mass * neighbor.mass * (
-                                particle.pressure / particle.density ** 2 + neighbor.pressure / neighbor.density ** 2)  # поменяла формулу для силы
+                                particle.pressure / particle.density ** 2 + neighbor.pressure / neighbor.density ** 2)
                         viscosity = self.viscosity_coefficient if neighbor.type == particle.type == 'water' else self.coffee_water_viscosity
                         viscosity_force = viscosity * neighbor.mass * (
                                 neighbor.velocity - particle.velocity) / neighbor.density * self.kernel(
-                            distance)  # поменяла формулу для силы
+                            distance)
                         normal = self.normal(distance, particle.mass, particle.position)
                         k = self.surface_coef(distance, particle.mass, normal)
                         tension_force = -0.05 * k * normal
@@ -140,28 +138,24 @@ class Simulation:
             forces.append(force)
         return forces
 
-    def visualize(self, current_time: float,
-                  camera: Camera) -> None:  # стоит добавить параметр camera, чтобы делать гиф
+    def visualize(self, current_time: float, camera: Camera) -> None:
         x_coffee = [p.position[0] for p in self.particles if p.type == 'coffee']
         y_coffee = [p.position[1] for p in self.particles if p.type == 'coffee']
-        c_w_coffee = [round(p.c_w, 2) * 100 for p in self.particles if
-                      p.type == 'coffee']  # массив плотностей для цветовой гаммы
+        c_w_coffee = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'coffee']
         x_water = [p.position[0] for p in self.particles if p.type == 'water']
         y_water = [p.position[1] for p in self.particles if p.type == 'water']
-        c_w_water = [round(p.c_w, 2) * 100 for p in self.particles if
-                     p.type == 'water']  # массив плотностей для цветовой гаммы
-        plt.scatter(x_coffee, y_coffee, c=c_w_coffee, label='Coffee', alpha=1, s=12,
-                    cmap='tab20b')  # отрисовка по цветам в зависимости от плотности веществ, cmap - цветовая карта
+        c_w_water = [round(p.c_w, 2) * 100 for p in self.particles if p.type == 'water']
+        plt.scatter(x_coffee, y_coffee, c=c_w_coffee, label='Coffee', alpha=1, s=12, cmap='tab20b')
         plt.scatter(x_water, y_water, c=c_w_water, label='Water', alpha=1, s=2.5, cmap='cool')
         plt.title(f"Current time: {current_time:.2f}")
         plt.xlabel("X")
         plt.ylabel("Y")
         plt.legend()
-        plt.legend(['Coffee', 'Water'])  # добавить при отрисовке гифок (стандартная легенда не работает как следует)
+        plt.legend(['Coffee', 'Water'])
         plt.xlim(-20, 20)
         plt.ylim(-20, 20)
         plt.grid(False)
-        camera.snap()  # добавить при отрисовке гифок
+        camera.snap()
 
     def calculate_mean_c_w(self) -> float:
         mean_c_w = np.array([round(p.c_w, 2) * 100 for p in self.particles if p.type == 'water']).mean()
